@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+models/
+shield_config.json
+.shield-mcp/
+dist/
+*.egg-info/
