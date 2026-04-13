@@ -6,8 +6,8 @@ Welcome! Thanks for considering contributing.
 
 ```bash
 # Clone the repo
-git clone https://github.com/aniketkarne/PromptInjectionShield
-cd PromptInjectionShield
+git clone https://github.com/aniketkarne/aco-prompt-shield
+cd aco-prompt-shield
 
 # Install in dev mode
 pip install -e ".[dev]"
