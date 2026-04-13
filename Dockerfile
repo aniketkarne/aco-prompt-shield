@@ -1,5 +1,8 @@
 FROM python:3.10-slim
 
+LABEL org.opencontainers.image.title="aco-prompt-shield"
+LABEL org.opencontainers.image.description="A Local-First, Zero-Cost Prompt Injection Detection Server for MCP"
+
 WORKDIR /app
 
 COPY pyproject.toml README.md /app/

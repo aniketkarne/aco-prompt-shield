@@ -1,5 +1,5 @@
 [project]
-name = "aco-shield-mcp"
+name = "aco-prompt-shield"
 version = "0.1.0"
 description = "A Local-First, Zero-Cost Prompt Injection Detection Server for the Model Context Protocol."
 readme = "README.md"
@@ -33,7 +33,7 @@ dev = [
 ]
 
 [project.scripts]
-shield-mcp = "shield_mcp.server:main"
+aco-prompt-shield = "shield_mcp.server:main"
 
 [build-system]
 requires = ["hatchling"]

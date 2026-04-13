@@ -1,4 +1,4 @@
-# PromptInjectionShield-MCP 🛡️
+# aco-prompt-shield 🛡️
 
 A Local-First, Zero-Cost Prompt Injection Detection Server for the Model Context Protocol.
 
@@ -20,7 +20,7 @@ PromptInjectionShield provides a "Security Gateway" that identifies malicious pr
 ### From PyPI
 
 ```bash
-pip install aco-shield-mcp
+pip install aco-prompt-shield
 ```
 
 ### From Source
@@ -32,8 +32,8 @@ pip install .
 ### Docker
 
 ```bash
-docker build -t aco-shield-mcp .
-docker run aco-shield-mcp
+docker build -t aco-prompt-shield .
+docker run aco-prompt-shield
 ```
 
 ## Usage
@@ -41,7 +41,7 @@ docker run aco-shield-mcp
 ### 1. Running the Server
 
 ```bash
-shield-mcp
+aco-prompt-shield
 ```
 
 Or via Python:
@@ -58,7 +58,7 @@ To use this with Claude Desktop, add the following to your `claude_desktop_confi
 {
   "mcpServers": {
     "shield": {
-      "command": "shield-mcp"
+      "command": "aco-prompt-shield"
     }
   }
 }
@@ -136,3 +136,5 @@ Logs are stored by default in `~/.shield-mcp/logs/`.
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+**PyPI:** `pip install aco-prompt-shield`
