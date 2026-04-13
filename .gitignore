@@ -1,10 +1,51 @@
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache/
-models/
-shield_config.json
-.shield-mcp/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
 dist/
+build/
 *.egg-info/
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local config (may contain secrets)
+shield_config.json
+
+# Logs
+.shield-mcp/
+
+# ML model cache (downloaded on first run)
+models/
+
+# OS
+.DS_Store
+Thumbs.db

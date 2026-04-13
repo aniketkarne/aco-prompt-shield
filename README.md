@@ -17,31 +17,34 @@ PromptInjectionShield provides a "Security Gateway" that identifies malicious pr
 
 ## Installation
 
+### From PyPI
+
+```bash
+pip install aco-shield-mcp
+```
+
 ### From Source
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/shield-mcp.git
-   cd shield-mcp
-   ```
-
-2. Install dependencies:
-   ```bash
-   pip install .
-   ```
+```bash
+pip install .
+```
 
 ### Docker
 
-Build the image:
 ```bash
-docker build -t shield-mcp .
+docker build -t aco-shield-mcp .
+docker run aco-shield-mcp
 ```
 
 ## Usage
 
 ### 1. Running the Server
 
-You can run the server directly via Python:
+```bash
+shield-mcp
+```
+
+Or via Python:
 
 ```bash
 python -m shield_mcp.server
@@ -55,20 +58,27 @@ To use this with Claude Desktop, add the following to your `claude_desktop_confi
 {
   "mcpServers": {
     "shield": {
-      "command": "python",
-      "args": [
-        "-m",
-        "shield_mcp.server"
-      ],
-      "env": {
-        "PYTHONPATH": "/path/to/shield-mcp/src"
-      }
+      "command": "shield-mcp"
     }
   }
 }
 ```
 
-*Note: Ensure you provide the absolute path to the project if running from source.*
+Or from source:
+
+```json
+{
+  "mcpServers": {
+    "shield": {
+      "command": "python",
+      "args": ["-m", "shield_mcp.server"],
+      "env": {
+        "PYTHONPATH": "/path/to/PromptInjectionShield/src"
+      }
+    }
+  }
+}
+```
 
 ### 3. Tool: `analyze_prompt`
 
@@ -122,3 +132,7 @@ You can customize thresholds by creating a `shield_config.json` in the working d
 ```
 
 Logs are stored by default in `~/.shield-mcp/logs/`.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.

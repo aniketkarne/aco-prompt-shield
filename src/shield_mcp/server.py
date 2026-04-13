@@ -16,12 +16,11 @@ stream_handler = logging.StreamHandler(sys.stderr)
 stream_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
 
 logger = logging.getLogger("shield-mcp")
-logger.setLevel(logging.INFO)
-# Clear existing handlers to avoid duplication if reloaded or basicConfig interference
-if logger.hasHandlers():
-    logger.handlers.clear()
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
+# Only configure if not already configured (avoid duplicate handlers on reload)
+if not logger.handlers:
+    logger.setLevel(logging.INFO)
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
 
 mcp = FastMCP("PromptInjectionShield")
 
@@ -78,9 +77,12 @@ def analyze_prompt(prompt: str) -> dict:
 
     return {
         "is_injection": False,
-        "risk_score": score_ml,
+        "risk_score": 0.0,
         "category": None
     }
 
-if __name__ == "__main__":
+def main():
     mcp.run()
+
+if __name__ == "__main__":
+    main()

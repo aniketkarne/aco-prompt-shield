@@ -32,5 +32,7 @@ class Config:
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.model_cache_dir.mkdir(parents=True, exist_ok=True)
 
+__version__ = "0.1.0"
+
 # Global instance
 config = Config()

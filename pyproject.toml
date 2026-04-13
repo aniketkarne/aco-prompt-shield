@@ -1,22 +1,39 @@
 [project]
-name = "shield-mcp"
+name = "aco-shield-mcp"
 version = "0.1.0"
 description = "A Local-First, Zero-Cost Prompt Injection Detection Server for the Model Context Protocol."
 readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Aniket Karne", url = "https://github.com/aniketkarne"}
+]
+keywords = ["security", "prompt-injection", "mcp", "llm", "jailbreak-detection", "ai-safety"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "mcp",
     "transformers",
     "torch",
     "numpy",
     "scipy",
-    "safetensors"
+    "safetensors",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest"
+    "pytest",
 ]
+
+[project.scripts]
+shield-mcp = "shield_mcp.server:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -24,3 +41,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/shield_mcp"]
+
+[project.urls]
+Homepage = "https://github.com/aniketkarne/PromptInjectionShield"
+Documentation = "https://github.com/aniketkarne/PromptInjectionShield#readme"
+Repository = "https://github.com/aniketkarne/PromptInjectionShield"
+Issues = "https://github.com/aniketkarne/PromptInjectionShield/issues"
