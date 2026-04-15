@@ -5,19 +5,28 @@ LABEL org.opencontainers.image.description="A Local-First, Zero-Cost Prompt Inje
 
 WORKDIR /app
 
-COPY pyproject.toml README.md /app/
+COPY pyproject.toml README.md LICENSE /app/
 COPY src /app/src
-# Create models dir if not exists (it might be empty)
-RUN mkdir -p /app/models
-
-# Install dependencies and the package
-RUN pip install --no-cache-dir .
 
 # Create log directory
 RUN mkdir -p /root/.shield-mcp/logs
 
+# Install dependencies and the package
+RUN pip install --no-cache-dir .
+
+# Pre-cache the DeBERTa model so first container run doesn't download ~400MB
+# Uses HF_HOME so the cache lives in the standard HuggingFace location
+RUN python -c "\
+    import os; \
+    os.environ['HF_HOME'] = '/root/.cache/huggingface'; \
+    os.makedirs('/root/.cache/huggingface', exist_ok=True); \
+    from shield_mcp.detectors.ml_models import MLDetector; \
+    _ = MLDetector() \
+    "
+
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+ENV HF_HOME="/root/.cache/huggingface"
 
 # Run the server
 CMD ["python", "-m", "shield_mcp.server"]

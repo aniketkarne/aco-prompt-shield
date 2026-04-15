@@ -190,22 +190,44 @@ print(result)
 
 ## Configuration
 
-Create `shield_config.json` in your working directory:
+`aco-prompt-shield` supports three config sources, in priority order (highest first):
+
+1. **Environment variables** — best for containers, CI, and scripted deployments
+2. **`shield_config.json`** — per-project or per-deployment overrides
+3. **Defaults** — zero-config, works out of the box
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SHIELD_RISK_THRESHOLD` | `0.7` | Min ML confidence (0.0–1.0) to flag as injection |
+| `SHIELD_LOG_DIR` | `~/.shield-mcp/logs/` | Where to write detection logs |
+| `SHIELD_MODEL_NAME` | `protectai/deberta-v3-base-prompt-injection-v2` | HuggingFace model ID |
+| `HF_HOME` | `~/.cache/huggingface/` | HuggingFace model cache directory |
+| `SHIELD_OFFLINE_MODE` | `false` | Skip ML check if model unavailable |
+
+### `shield_config.json`
+
+Create `shield_config.json` in your working directory to override defaults or env vars:
 
 ```json
 {
   "risk_threshold": 0.7,
   "log_dir": "/var/log/shield-mcp",
   "model_cache_dir": "./models",
+  "model_name": "protectai/deberta-v3-base-prompt-injection-v2",
   "offline_mode": false
 }
 ```
+
+> **Priority:** Environment variables take precedence over `shield_config.json`. This makes it easy to override settings via `-e` flags in Docker or CI pipelines without modifying config files.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `risk_threshold` | `0.7` | Min ML confidence (0.0–1.0) to flag as injection. Higher = fewer false positives, more misses. |
 | `log_dir` | `~/.shield-mcp/logs/` | Where to write detection logs |
-| `model_cache_dir` | `./models` | Where to cache the DeBERTa model (first run downloads ~400MB) |
+| `model_cache_dir` | `~/.cache/huggingface/` | HuggingFace cache directory (overridden by `HF_HOME` env var) |
+| `model_name` | `protectai/deberta-v3-base-prompt-injection-v2` | HuggingFace model ID |
 | `offline_mode` | `false` | Skip ML check entirely if model unavailable |
 
 ---
@@ -273,7 +295,17 @@ docker build -t aco-prompt-shield .
 docker run -v ./shield_config.json:/app/shield_config.json aco-prompt-shield
 ```
 
-> **Note:** On first run, the DeBERTa model (~400MB) is downloaded from HuggingFace if not already cached. Subsequent runs use the local cache.
+The DeBERTa model (~400MB) is pre-cached inside the image at build time, so the container starts instantly without downloading anything.
+
+To override config at runtime via environment variables:
+
+```bash
+docker run \
+  -e SHIELD_RISK_THRESHOLD=0.8 \
+  -e HF_HOME=/cache/huggingface \
+  -v /path/to/model/cache:/cache/huggingface \
+  aco-prompt-shield
+```
 
 ---
 
