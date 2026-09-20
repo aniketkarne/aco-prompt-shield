@@ -19,7 +19,10 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "mcp",
+    # The server uses the v1 FastMCP API which was renamed to MCPServer in
+    # mcp 2.x. Pin to the v1 line so `aco-prompt-shield` doesn't crash on
+    # import when `mcp>=2` resolves.
+    "mcp>=1.10,<2",
     "transformers",
     "torch",
     "numpy",
