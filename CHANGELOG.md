@@ -2,6 +2,60 @@
 
 All notable changes will be documented in this file.
 
+## [0.2.0] - 2026-10-16
+
+### Changed (BREAKING for users with custom ML configs)
+
+- **Tiered install — `pip install aco-prompt-shield` is now ~3 MB.**
+  The default install includes only the MCP server + regex + structural
+  detectors. No ML inference is performed and no model is downloaded.
+- **`pip install aco-prompt-shield[ml]` adds ONNX Runtime + Horizon-Labs
+  prompt-injection-guard-small (Apache-2.0).** Replaces the previous
+  torch+transformers + ProtectAI DeBERTa stack. The new model is
+  multilingual (30 languages), trained on direct AND indirect injection,
+  and has a 2048-token context window (vs 512). First-run downloads
+  ~280 MB of quantized ONNX to `$HF_HOME`.
+- **`pip install aco-prompt-shield[full]` keeps the original
+  torch+transformers path for users with DeBERTa cached.** Opt-in only.
+- **`scipy` removed as a hard dependency.** Shannon entropy in
+  StructuralDetector is now pure-stdlib. Saves ~99 MB on every tier.
+- **ML detector is lazy-loaded on first `analyze_prompt` call.**
+  Server startup drops from ~6 s to <1 s. Model loads once, cached for
+  the process lifetime.
+- **New env var `SHIELD_ML_BACKEND` (default `auto`)** — selects
+  `onnx | full | off | auto`. `auto` picks the best backend available.
+  `off` disables ML entirely.
+
+### Improved
+
+- **Heuristic FP reduction on real-world benign text** — tightened 4
+  patterns that were triggering on legitimate phrases:
+  - `cooking instructions` no longer matches Prompt Exfiltration (was
+    matching "show me the cooking instructions")
+  - `how do I enable developer mode` no longer matches Jailbreak
+    (Android UI mode is a legitimate phrase)
+  - `required by law` alone no longer matches Fake Authority (the
+    imperative follow-on is now required)
+  - `<user>` / `<div>` style XML/HTML no longer matches Delimiter
+    Hijacking (only injection-target tags do)
+  - See `tests/fp_corpus.yaml` for the 35-prompt corpus and
+    `tests/test_fp_corpus.py` for the regression test.
+- **Default model horizon** — README updated with new benchmarks
+  against the 19-attack + 5-indirect-injection + 20-benign corpus.
+  Detection rate: 19/19 on direct attacks + 5/5 on indirect attacks
+  (previously DeBERTa-v2 missed 1/23). FP rate: 2/20 on benign text
+  (both at ~0.71 confidence — borderline calls).
+
+### Added
+
+- `tests/fp_corpus.yaml` and `tests/test_fp_corpus.py` — regression
+  suite of 35 real-world benign prompts that should NOT flag. Covers
+  12+ trigger-word categories.
+- `tests/test_onnx_backend.py` — unit tests for the new ONNX backend
+  with mocked dependencies.
+- `demo/bench.py` — runnable benchmark script, writes
+  `demo/bench-results.json`.
+
 ## [0.1.5] - 2026-10-16
 
 ### Fixed

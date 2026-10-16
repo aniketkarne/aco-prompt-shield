@@ -1,6 +1,6 @@
 [project]
 name = "aco-prompt-shield"
-version = "0.1.5"
+version = "0.2.0"
 description = "A Local-First, Zero-Cost Prompt Injection Detection Server for the Model Context Protocol."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -10,7 +10,7 @@ authors = [
 ]
 keywords = ["security", "prompt-injection", "mcp", "llm", "jailbreak-detection", "ai-safety"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -18,21 +18,42 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
+
+# Core dependencies: regex + structural detector only. No ML.
+# This keeps the default install at ~3 MB. Add [ml] for ONNX inference.
 dependencies = [
     # The server uses the v1 FastMCP API which was renamed to MCPServer in
     # mcp 2.x. Pin to the v1 line so `aco-prompt-shield` doesn't crash on
     # import when `mcp>=2` resolves.
     "mcp>=1.10,<2",
-    "transformers",
-    "torch",
-    "numpy",
-    "scipy",
-    "safetensors",
 ]
 
 [project.optional-dependencies]
+# ONNX Runtime + huggingface_hub for downloading the bundled model.
+# Adds ~70 MB. First-run download of the ONNX model is ~280 MB, cached at
+# ~/.cache/huggingface/ afterwards.
+ml = [
+    "onnxruntime>=1.17",
+    "huggingface_hub>=0.20",
+    "tokenizers>=0.13",
+    "numpy",
+]
+# Original torch+transformers backend. Opt-in for users who already have
+# ProtectAI DeBERTa cached locally. Adds ~700 MB.
+full = [
+    "torch",
+    "safetensors",
+    "transformers",
+    "numpy",
+]
+# PDF and Markdown parsing for analyze_document (added in 0.3.0).
+docs = [
+    "pypdf>=4",
+    "markdown>=3.5",
+]
 dev = [
     "pytest",
+    "pyyaml",
 ]
 
 [project.scripts]

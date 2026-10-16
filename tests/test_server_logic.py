@@ -7,11 +7,11 @@ sys.modules["transformers"] = MagicMock()
 
 from shield_mcp.server import analyze_prompt
 
-@patch("shield_mcp.server.ml_detector")
+@patch("shield_mcp.server._get_ml_detector")
 @patch("shield_mcp.server.structural_detector")
-def test_analyze_prompt_heuristic(mock_struct, mock_ml):
-    # Setup mocks to return safe values by default
-    mock_ml.check.return_value = (False, 0.0, None)
+def test_analyze_prompt_heuristic(mock_struct, mock_get_ml):
+    # Force the ML resolver to return None so we exercise the heuristic+structural path
+    mock_get_ml.return_value = None
     mock_struct.check.return_value = (False, 0.0, None)
 
     # Test injection

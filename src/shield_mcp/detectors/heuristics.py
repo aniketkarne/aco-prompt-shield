@@ -41,8 +41,17 @@ class HeuristicDetector:
          "System Override", "CRITICAL"),
         (r"\b<\|/?system\|>", "System Override", "CRITICAL"),
         (r"\b\[system\]|\[/system\]", "System Override", "HIGH"),
-        # Developer mode — only flag imperative/immediate context, not Q&A or descriptions
-        (r"\b(enter|entering|enters?|enable|enables?|enabling|activate|activates?|activating)\s+developer\s+mode\b",
+        # Developer mode — flag imperative/immediate context, but only when
+        # the imperative is the attack itself (not a question or doc
+        # explanation like "how do I enable developer mode on my Android
+        # phone", which is the legitimate Android UI mode).
+        # We use a separate "developer-mode-imperative-not-question"
+        # pattern that's tighter: must NOT be preceded by "how" within
+        # 24 chars, must be in imperative voice. Length-24 lookbehind
+        # catches "how do I ", "how to ", "how can I ", "how does one ".
+        (r"(?<!how do I )(?<!how to I )(?<!how can I )(?<!how does one )(?<!how would I )(?<!how could I )(?<!how should I )(?<!how is it )(?<!how are you )(?<!how did I )(?<!how do you )(?<!how do we )(?<!how do they )(?<!how do users )(?<!how to enable )(?<!how to activate )\b(enter|entering|enters?|enable|enables?|enabling|activate|activates?|activating|switch\s+to)\s+developer\s+mode\b",
+         "Jailbreak", "CRITICAL"),
+        (r"\bdeveloper\s+mode\b.{0,40}\b(jailbreak|unlock|hidden|secret|bypass|override|disable\s+(safety|filters?|restrictions?))\b",
          "Jailbreak", "CRITICAL"),
         # Maintenance mode — only flag imperative, not "kicks in at 3am" descriptions
         (r"\b(enter|entering|enable|enabling|activate|activating)\s+maintenance\s+mode\b",
@@ -61,10 +70,13 @@ class HeuristicDetector:
         (r"\b(?:anti-?GPT|stan|sam|KEVIN|BetterDAN)\b", "Jailbreak Persona", "HIGH"),
 
         # ---- Delimiter / Tag Hijacking ----
+        # Tightened (2026-10): require the tag name to look like an
+        # injection target (system/prompt/inst/etc.) — generic XML/HTML
+        # tag names ("<user>", "<div>") are too broad and produce FPs on
+        # any prompt that mentions template syntax. The catch-all
+        # `</?[\w_-]+\s*>` was dropped.
         (r"</?(system(_prompt)?|inst|instructions?|context|prompt|im_start|im_end)\b",
          "Delimiter Hijacking", "CRITICAL"),
-        (r"</?[\w_-]+\s*>",
-         "Delimiter Hijacking", "MEDIUM"),  # broad catch-all for tag-like patterns
         (r"<\|/?(endoftext|im_start|im_end|system|user|assistant)\|?>",
          "Special Token Injection", "CRITICAL"),
         (r"```\s*(system|instructions?)\b", "Code Block Hijack", "HIGH"),
@@ -83,21 +95,33 @@ class HeuristicDetector:
          "Persona Override", "HIGH"),
 
         # ---- Compliance / Legal / Authority Bypass ----
+        # Tightened (2026-10): the phrase "required by law" / "required
+        # by policy" alone is not an injection signal — it appears in
+        # many legitimate prompts. The actual injection signal is the
+        # imperative that follows ("required by law, therefore you must
+        # bypass X"). Require an action verb to follow within ~30 chars.
         (r"\b(comply|cooperate) with my (request|instruction) immediately\b",
          "Authority Pressure", "HIGH"),
-        (r"\b(required by (law|policy|compliance|our team))\b",
-         "Fake Authority", "MEDIUM"),
-        (r"\bour (legal|compliance) team (requires|approved)\b",
-         "Fake Authority", "MEDIUM"),
+        (r"\b(required by (law|policy|compliance|our team))\b.{0,40}\b(you\s+must|you\s+should|you\s+will|therefore|immediately|bypass|override|ignore|disregard)\b",
+         "Fake Authority", "HIGH"),
+        (r"\bour (legal|compliance) team (requires|approved)\b.{0,40}\b(you\s+must|you\s+should|immediately|bypass|override|ignore|disregard)\b",
+         "Fake Authority", "HIGH"),
         (r"\bthis is (an emergency|urgent|critical) and you must\b",
          "Urgency Pressure", "MEDIUM"),
 
         # ---- Output / Behaviour Exfiltration ----
-        (r"\b(output|reveal|show|print|display|dump|leak)\b.{0,30}\b(system\s*prompt|hidden\s*prompt|initial\s*prompt|secret\s*prompt|instructions?)\b",
+        # Tightened (2026-10): require the request verb to be paired with
+        # the *specific* exfil target ("system prompt", "hidden prompt",
+        # "initial prompt", "secret prompt", "instructions") — not the
+        # generic word "instructions" which appears in benign contexts
+        # like "cooking instructions", "washing instructions", etc.
+        # This eliminates FPs like "show me the cooking instructions"
+        # while still catching "show me your system prompt".
+        (r"\b(output|reveal|show|print|display|dump|leak|tell me|share)\b.{0,30}\b(system\s*prompt|hidden\s*prompt|initial\s*prompt|secret\s*prompt|hidden\s*rules?|system\s*instructions?|secret\s*instructions?)\b",
          "Prompt Exfiltration", "CRITICAL"),
-        (r"\bwhat (is|are) your (system\s*prompt|instructions?|hidden\s*rules?)\b",
+        (r"\bwhat (is|are) your (system\s*prompt|hidden\s*rules?)\b",
          "Prompt Exfiltration", "CRITICAL"),
-        (r"\brepeat (your|the) (system\s*prompt|initial\s*prompt|instructions?) (verbatim|exactly)\b",
+        (r"\brepeat (your|the) (system\s*prompt|initial\s*prompt|secret\s*instructions?) (verbatim|exactly)\b",
          "Prompt Exfiltration", "CRITICAL"),
         (r"\b(cat|less|head|tail|more|vi|vim|nano)\b\s+\.?/?~?/?\.?(ssh|id_rsa|aws/credentials|netrc|\.env)\b",
          "Secret Exfiltration", "CRITICAL"),

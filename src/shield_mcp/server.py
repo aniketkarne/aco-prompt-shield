@@ -1,8 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 from shield_mcp.detectors.heuristics import HeuristicDetector
-from shield_mcp.detectors.ml_models import MLDetector
 from shield_mcp.detectors.structural import StructuralDetector
-from shield_mcp.utils.config import config
+from shield_mcp.utils.config import config, resolve_ml_backend
 import hashlib
 import logging
 import sys
@@ -25,10 +24,61 @@ if not logger.handlers:
 
 mcp = FastMCP("aco-prompt-shield")
 
-# Initialize detectors
+# Heuristic + Structural detectors are pure-stdlib and loaded eagerly —
+# they're cheap and we always want them available as the first line of
+# defence.
 heuristic_detector = HeuristicDetector()
-ml_detector = MLDetector()
 structural_detector = StructuralDetector()
+
+# ML detector is loaded lazily on the first call to analyze_prompt. This
+# keeps server startup under 1 s even with the [ml] extra installed.
+_ml_detector = None
+_ml_backend_resolved: str | None = None
+
+
+def _get_ml_detector():
+    """
+    Lazily instantiate the ML detector.
+
+    Returns None if ML is disabled (off) or unavailable (deps missing).
+    """
+    global _ml_detector, _ml_backend_resolved
+
+    if _ml_detector is not None:
+        return _ml_detector
+
+    backend = resolve_ml_backend()
+    _ml_backend_resolved = backend
+
+    if backend == "off":
+        logger.debug("ML backend disabled (no ML extra installed).")
+        return None
+
+    if backend == "onnx":
+        try:
+            from shield_mcp.detectors.ml_onnx import ONNXDetector
+            _ml_detector = ONNXDetector(
+                model_id=config.model_name,
+                cache_dir=config.model_cache_dir,
+                risk_threshold=config.risk_threshold,
+            )
+            logger.info("ML backend: ONNX Runtime (%s)", config.model_name)
+            return _ml_detector
+        except Exception as e:
+            logger.error("Failed to init ONNX backend: %s", e)
+            return None
+
+    if backend == "full":
+        try:
+            from shield_mcp.detectors.ml_models import MLDetector
+            _ml_detector = MLDetector()  # uses config internally
+            logger.info("ML backend: torch+transformers (%s)", config.model_name)
+            return _ml_detector
+        except Exception as e:
+            logger.error("Failed to init full backend: %s", e)
+            return None
+
+    return None
 
 
 def _fingerprint(prompt: str) -> str:
@@ -45,8 +95,7 @@ def _fingerprint(prompt: str) -> str:
 
 @mcp.tool()
 def analyze_prompt(prompt: str) -> dict:
-    """
-    Analyzes a prompt for potential injection attacks.
+    """Analyzes a prompt for potential injection attacks.
 
     Args:
         prompt: The input prompt to analyze.
@@ -74,18 +123,20 @@ def analyze_prompt(prompt: str) -> dict:
             "category": cat
         }
 
-    # Level 2: Semantic Analysis (ML Model)
-    is_inj_ml, score_ml, cat_ml = ml_detector.check(prompt)
-    if is_inj_ml:
-        logger.warning(
-            "ml hit: fp=%s category=%s score=%.2f",
-            _fingerprint(prompt), cat_ml, score_ml,
-        )
-        return {
-            "is_injection": True,
-            "risk_score": score_ml,
-            "category": cat_ml
-        }
+    # Level 2: Semantic Analysis (ML Model) — lazy load.
+    ml = _get_ml_detector()
+    if ml is not None:
+        is_inj_ml, score_ml, cat_ml = ml.check(prompt)
+        if is_inj_ml:
+            logger.warning(
+                "ml hit: fp=%s category=%s score=%.2f",
+                _fingerprint(prompt), cat_ml, score_ml,
+            )
+            return {
+                "is_injection": True,
+                "risk_score": score_ml,
+                "category": cat_ml
+            }
 
     # Level 3: Structural Check
     is_inj_struct, score_struct, cat_struct = structural_detector.check(prompt)
